@@ -1,7 +1,9 @@
 package com.capstone.community_service.service;
 
 import com.capstone.community_service.entity.CommunityEntity;
+import com.capstone.community_service.pojo.CommunityAddInputPojo;
 import com.capstone.community_service.pojo.CommunityPojo;
+import com.capstone.community_service.pojo.CommunityUpdateInputPojo;
 import com.capstone.community_service.repository.CommunityRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,29 +41,19 @@ public class CommunityService {
         return communityEntityOptional.map(this::convertEntityToPojo).orElse(null);
     }
 
-    // Add a new community
-    public CommunityPojo addACommunity(CommunityPojo newCommunityPojo) {
-        CommunityEntity newCommunityEntity = new CommunityEntity();
-        BeanUtils.copyProperties(newCommunityPojo, newCommunityEntity);
-        CommunityEntity savedCommunity = communityRepository.saveAndFlush(newCommunityEntity);
-        return convertEntityToPojo(savedCommunity);
-    }
-
-    // Update an existing community
-    public CommunityPojo updateCommunity(CommunityPojo editCommunityPojo) {
-        Optional<CommunityEntity> existingEntityOptional = communityRepository.findById(editCommunityPojo.getCommunityId());
-        if (existingEntityOptional.isPresent()) {
-            CommunityEntity existingEntity = existingEntityOptional.get();
-            BeanUtils.copyProperties(editCommunityPojo, existingEntity);
-            CommunityEntity updatedCommunity = communityRepository.save(existingEntity);
-            return convertEntityToPojo(updatedCommunity);
-        }
-        return null;
-    }
-
     // Get all active communities
     public List<CommunityPojo> getActiveCommunities() {
         List<CommunityEntity> communityEntities = communityRepository.findByIsActive(true);
+        List<CommunityPojo> communityPojos = new ArrayList<>();
+        for (CommunityEntity communityEntity : communityEntities) {
+            communityPojos.add(convertEntityToPojo(communityEntity));
+        }
+        return communityPojos;
+    }
+
+    // Get all active communities
+    public List<CommunityPojo> getDeactivatedCommunities() {
+        List<CommunityEntity> communityEntities = communityRepository.findByIsActive(false);
         List<CommunityPojo> communityPojos = new ArrayList<>();
         for (CommunityEntity communityEntity : communityEntities) {
             communityPojos.add(convertEntityToPojo(communityEntity));
@@ -79,16 +71,82 @@ public class CommunityService {
         return communityPojos;
     }
 
+    // Get all public communities
+    public List<CommunityPojo> getPrivateCommunities() {
+        List<CommunityEntity> communityEntities = communityRepository.findByIsPublic(false);
+        List<CommunityPojo> communityPojos = new ArrayList<>();
+        for (CommunityEntity communityEntity : communityEntities) {
+            communityPojos.add(convertEntityToPojo(communityEntity));
+        }
+        return communityPojos;
+    }
+
+    // Add a new community
+    public CommunityPojo addACommunity(CommunityAddInputPojo newCommunityPojo) {
+        CommunityEntity existingCommunityEntity = communityRepository
+                .findByCommunityHead(newCommunityPojo.getCommunityHead()).orElse(null);
+        if (existingCommunityEntity == null) {
+            CommunityEntity newCommunityEntity = new CommunityEntity();
+            newCommunityEntity.setCommunityName(newCommunityPojo.getCommunityName());
+            newCommunityEntity.setCommunityHead(newCommunityPojo.getCommunityHead());
+            newCommunityEntity.setPublic(newCommunityPojo.isPublic());
+            newCommunityEntity.setRuleId(0);
+            newCommunityEntity.setActive(false);
+            newCommunityEntity.setCurrentAmount(0);
+            newCommunityEntity.setDeleted(false);
+            CommunityEntity savedCommunity = communityRepository.saveAndFlush(newCommunityEntity);
+            return convertEntityToPojo(savedCommunity);
+        }
+        return null;
+    }
+
+    // Update an existing community
+    public CommunityPojo updateCommunity(CommunityUpdateInputPojo editCommunityPojo) {
+        CommunityEntity existingCommunityEntity = communityRepository.findById(editCommunityPojo.getCommunityId())
+                .orElse(null);
+        if (existingCommunityEntity != null) {
+            existingCommunityEntity.setCommunityName(editCommunityPojo.getCommunityName());
+            existingCommunityEntity.setPublic(editCommunityPojo.isPublic());
+            CommunityPojo communityPojo = convertEntityToPojo(existingCommunityEntity);
+            communityRepository.save(existingCommunityEntity);
+            return communityPojo;
+        }
+        return null;
+    }
+
+    public void activateCommunity(int communityId) {
+        Optional<CommunityEntity> communityEntityOptional = communityRepository.findById(communityId);
+        if (communityEntityOptional.isPresent()) {
+            CommunityEntity communityEntity = communityEntityOptional.get();
+            communityEntity.setActive(true);
+            communityRepository.save(communityEntity);
+        } else {
+            throw new RuntimeException("Community not found with ID: " + communityId);
+        }
+    }
+
+    public void deactivateCommunity(int communityId) {
+        Optional<CommunityEntity> communityEntityOptional = communityRepository.findById(communityId);
+        if (communityEntityOptional.isPresent()) {
+            CommunityEntity communityEntity = communityEntityOptional.get();
+            communityEntity.setActive(false);
+            communityEntity.setDeleted(true);
+            communityRepository.save(communityEntity);
+        } else {
+            throw new RuntimeException("Community not found with ID: " + communityId);
+        }
+    }
+
     // Delete a community (soft delete)
     public void deleteCommunity(int communityId) {
         Optional<CommunityEntity> communityEntityOptional = communityRepository.findById(communityId);
         if (communityEntityOptional.isPresent()) {
             CommunityEntity communityEntity = communityEntityOptional.get();
             communityEntity.setActive(false);
+            communityEntity.setDeleted(true);
             communityRepository.save(communityEntity);
         } else {
             throw new RuntimeException("Community not found with ID: " + communityId);
         }
     }
 }
-

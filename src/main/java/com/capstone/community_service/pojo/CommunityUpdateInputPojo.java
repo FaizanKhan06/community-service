@@ -4,16 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class CommunityPojo {
+public class CommunityUpdateInputPojo {
+
     private int communityId;
     private String communityName;
-    private String communityHead;
-    private double currentAmount;
-    private int ruleId;
     private boolean isPublic;
-    private boolean isActive;
-    private boolean isDeleted;
+
 }
