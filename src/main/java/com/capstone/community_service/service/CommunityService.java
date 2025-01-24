@@ -114,6 +114,14 @@ public class CommunityService {
         return null;
     }
 
+    public void setRuleId(int communityId, int ruleId) {
+        CommunityEntity communityEntity = communityRepository.findById(communityId).orElse(null);
+        if (communityEntity != null) {
+            communityEntity.setRuleId(ruleId);
+            communityRepository.save(communityEntity);
+        }
+    }
+
     public void activateCommunity(int communityId) {
         Optional<CommunityEntity> communityEntityOptional = communityRepository.findById(communityId);
         if (communityEntityOptional.isPresent()) {

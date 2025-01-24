@@ -41,13 +41,19 @@ public class CommunityController {
     }
 
     // Update an existing community
-    @PutMapping("/{communityId}")
+    @PutMapping("")
     public ResponseEntity<CommunityPojo> updateCommunity(@RequestBody CommunityUpdateInputPojo editCommunity) {
         CommunityPojo updatedCommunity = communityService.updateCommunity(editCommunity);
         if (updatedCommunity != null) {
             return ResponseEntity.ok(updatedCommunity);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{communityId}")
+    public ResponseEntity<Void> setRuleId(@PathVariable int communityId, @RequestParam int ruleId) {
+        communityService.setRuleId(communityId, ruleId);
+        return ResponseEntity.ok().body(null);
     }
 
     // Get all active communities
