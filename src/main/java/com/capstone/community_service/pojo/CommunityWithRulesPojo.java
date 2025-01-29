@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class CommunityPojo {
+public class CommunityWithRulesPojo {
     private int communityId;
     private String communityName;
     private String communityHead;
     private double currentAmount;
-    private int ruleId;
+    private RulesPojo rule;
     private boolean isPublic;
     private int remainingTermPeriod;
     private LocalDateTime nextContributionDate;

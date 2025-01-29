@@ -1,5 +1,7 @@
 package com.capstone.community_service.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,8 +27,12 @@ public class CommunityEntity {
     private int ruleId;
     @Column(name = "is_public")
     private boolean isPublic;
+    @Column(name = "remaining_term_period")
+    private int remainingTermPeriod;
     @Column(name = "is_active")
     private boolean isActive;
+    @Column(name = "next_contribution_date")
+    private LocalDateTime nextContributionDate;
     @Column(name = "is_deleted")
     private boolean isDeleted;
 }

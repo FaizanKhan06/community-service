@@ -9,6 +9,8 @@ CREATE TABLE community
     current_amount DOUBLE,
     rule_id INT,
     is_public BOOLEAN,
+    remaining_term_period INT,
+    next_contribution_date DATETIME,
     is_active BOOLEAN,
     is_deleted BOOLEAN
 );

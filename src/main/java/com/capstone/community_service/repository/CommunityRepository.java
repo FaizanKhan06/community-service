@@ -14,4 +14,10 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Inte
     List<CommunityEntity> findByIsActive(boolean isActive);
 
     List<CommunityEntity> findByIsPublic(boolean isPublic);
+
+    List<CommunityEntity> findByIsPublicAndRuleIdNot(boolean isPublic, int ruleId);
+
+    List<CommunityEntity> findByIsPublicAndRuleIdNotAndIsActiveAndIsDeleted(boolean isPublic, int ruleId,
+            boolean isActive,
+            boolean isDeleted);
 }

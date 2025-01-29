@@ -3,12 +3,17 @@ package com.capstone.community_service.service;
 import com.capstone.community_service.entity.CommunityEntity;
 import com.capstone.community_service.pojo.CommunityAddInputPojo;
 import com.capstone.community_service.pojo.CommunityPojo;
+import com.capstone.community_service.pojo.CommunityUpdateAmountPojo;
 import com.capstone.community_service.pojo.CommunityUpdateInputPojo;
+import com.capstone.community_service.pojo.CommunityWithRulesPojo;
+import com.capstone.community_service.pojo.RulesPojo;
 import com.capstone.community_service.repository.CommunityRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,20 +30,60 @@ public class CommunityService {
     }
 
     // Get all communities
-    public List<CommunityPojo> getAllCommunities() {
-        List<CommunityEntity> communityEntities = communityRepository.findAll();
-        List<CommunityPojo> communityPojos = new ArrayList<>();
+    public List<CommunityWithRulesPojo> getPublicCommunitiesToShowUser() {
+        List<CommunityEntity> communityEntities = communityRepository.findByIsPublicAndRuleIdNotAndIsActiveAndIsDeleted(
+                true, 0,
+                false, false);
+        List<CommunityWithRulesPojo> communityPojos = new ArrayList<>();
         for (CommunityEntity communityEntity : communityEntities) {
-            communityPojos.add(convertEntityToPojo(communityEntity));
+            CommunityWithRulesPojo communityWithRulesPojo = new CommunityWithRulesPojo();
+            BeanUtils.copyProperties(communityEntity, communityWithRulesPojo);
+            RestClient restClient = RestClient.create();
+            RulesPojo response = restClient.get()
+                    .uri("http://localhost:5004/api/rules/" + communityEntity.getRuleId())
+                    .retrieve().body(RulesPojo.class);
+            communityWithRulesPojo.setRule(response);
+            communityPojos.add(communityWithRulesPojo);
         }
         return communityPojos;
     }
 
     // Get a specific community by ID
-    public CommunityPojo getACommunity(int communityId) {
-        Optional<CommunityEntity> communityEntityOptional = communityRepository.findById(communityId);
-        // or throw an exception
-        return communityEntityOptional.map(this::convertEntityToPojo).orElse(null);
+    public CommunityWithRulesPojo getACommunity(int communityId) {
+        CommunityEntity communityEntity = communityRepository.findById(communityId).orElse(null);
+        if (communityEntity != null) {
+            CommunityWithRulesPojo communityWithRulesPojo = new CommunityWithRulesPojo();
+            BeanUtils.copyProperties(communityEntity, communityWithRulesPojo);
+            if (communityEntity.getRuleId() != 0) {
+                RestClient restClient = RestClient.create();
+                RulesPojo response = restClient.get()
+                        .uri("http://localhost:5004/api/rules/" + communityEntity.getRuleId())
+                        .retrieve().body(RulesPojo.class);
+                communityWithRulesPojo.setRule(response);
+                return communityWithRulesPojo;
+            }
+            return communityWithRulesPojo;
+        }
+        return null;
+    }
+
+    // Get a specific community by ID
+    public CommunityWithRulesPojo getACommunityByCommunityHead(String communityHead) {
+        CommunityEntity communityEntity = communityRepository.findByCommunityHead(communityHead).orElse(null);
+        if (communityEntity != null) {
+            CommunityWithRulesPojo communityWithRulesPojo = new CommunityWithRulesPojo();
+            BeanUtils.copyProperties(communityEntity, communityWithRulesPojo);
+            if (communityEntity.getRuleId() != 0) {
+                RestClient restClient = RestClient.create();
+                RulesPojo response = restClient.get()
+                        .uri("http://localhost:5004/api/rules/" + communityEntity.getRuleId())
+                        .retrieve().body(RulesPojo.class);
+                communityWithRulesPojo.setRule(response);
+                return communityWithRulesPojo;
+            }
+            return communityWithRulesPojo;
+        }
+        return null;
     }
 
     // Get all active communities
@@ -93,6 +138,8 @@ public class CommunityService {
             newCommunityEntity.setRuleId(0);
             newCommunityEntity.setActive(false);
             newCommunityEntity.setCurrentAmount(0);
+            newCommunityEntity.setNextContributionDate(LocalDateTime.now());
+            newCommunityEntity.setRemainingTermPeriod(0);
             newCommunityEntity.setDeleted(false);
             CommunityEntity savedCommunity = communityRepository.saveAndFlush(newCommunityEntity);
             return convertEntityToPojo(savedCommunity);
@@ -114,10 +161,25 @@ public class CommunityService {
         return null;
     }
 
-    public void setRuleId(int communityId, int ruleId) {
+    public CommunityPojo updateAmountCommunity(CommunityUpdateAmountPojo editCommunityPojo) {
+        CommunityEntity existingCommunityEntity = communityRepository.findById(editCommunityPojo.getCommunityId())
+                .orElse(null);
+        if (existingCommunityEntity != null) {
+            existingCommunityEntity.setCurrentAmount(
+                    existingCommunityEntity.getCurrentAmount() + editCommunityPojo.getAmount());
+            CommunityPojo communityPojo = convertEntityToPojo(existingCommunityEntity);
+            communityRepository.save(existingCommunityEntity);
+            return communityPojo;
+        }
+        return null;
+    }
+
+    public void setRuleId(int communityId, int ruleId, int remainingTermPeriod, LocalDateTime nextContributionDate) {
         CommunityEntity communityEntity = communityRepository.findById(communityId).orElse(null);
         if (communityEntity != null) {
             communityEntity.setRuleId(ruleId);
+            communityEntity.setRemainingTermPeriod(remainingTermPeriod);
+            communityEntity.setNextContributionDate(nextContributionDate);
             communityRepository.save(communityEntity);
         }
     }
