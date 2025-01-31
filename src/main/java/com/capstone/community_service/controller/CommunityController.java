@@ -78,8 +78,8 @@ public class CommunityController {
 
     // Get all active communities
     @GetMapping("/active")
-    public ResponseEntity<List<CommunityPojo>> getActiveCommunities() {
-        List<CommunityPojo> activeCommunities = communityService.getActiveCommunities();
+    public ResponseEntity<List<CommunityWithRulesPojo>> getActiveCommunities() {
+        List<CommunityWithRulesPojo> activeCommunities = communityService.getActiveCommunities();
         return ResponseEntity.ok(activeCommunities);
     }
 

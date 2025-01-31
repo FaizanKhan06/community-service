@@ -87,11 +87,20 @@ public class CommunityService {
     }
 
     // Get all active communities
-    public List<CommunityPojo> getActiveCommunities() {
+    public List<CommunityWithRulesPojo> getActiveCommunities() {
         List<CommunityEntity> communityEntities = communityRepository.findByIsActive(true);
-        List<CommunityPojo> communityPojos = new ArrayList<>();
+        List<CommunityWithRulesPojo> communityPojos = new ArrayList<>();
         for (CommunityEntity communityEntity : communityEntities) {
-            communityPojos.add(convertEntityToPojo(communityEntity));
+            CommunityWithRulesPojo communityWithRulesPojo = new CommunityWithRulesPojo();
+            BeanUtils.copyProperties(communityEntity, communityWithRulesPojo);
+            if (communityEntity.getRuleId() != 0) {
+                RestClient restClient = RestClient.create();
+                RulesPojo response = restClient.get()
+                        .uri("http://localhost:5004/api/rules/" + communityEntity.getRuleId())
+                        .retrieve().body(RulesPojo.class);
+                communityWithRulesPojo.setRule(response);
+            }
+            communityPojos.add(communityWithRulesPojo);
         }
         return communityPojos;
     }
@@ -166,7 +175,8 @@ public class CommunityService {
                 .orElse(null);
         if (existingCommunityEntity != null) {
             existingCommunityEntity.setCurrentAmount(
-                    existingCommunityEntity.getCurrentAmount() + editCommunityPojo.getAmount());
+                Math.round((existingCommunityEntity.getCurrentAmount() + editCommunityPojo.getAmount()) * 100.0) / 100.0
+            );
             CommunityPojo communityPojo = convertEntityToPojo(existingCommunityEntity);
             communityRepository.save(existingCommunityEntity);
             return communityPojo;
