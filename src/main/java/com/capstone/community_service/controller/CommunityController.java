@@ -46,6 +46,14 @@ public class CommunityController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/communityHead/deactive/{communityHead}")
+    public ResponseEntity<List<CommunityWithRulesPojo>> getDeactiveCommunitiesByCommunityHead(
+            @PathVariable String communityHead) {
+        List<CommunityWithRulesPojo> communities = communityService
+                .getDeactiveCommunitiesByCommunityHead(communityHead);
+        return ResponseEntity.ok(communities);
+    }
+
     // Add a new community
     @PostMapping("")
     public ResponseEntity<CommunityPojo> addACommunity(@RequestBody CommunityAddInputPojo newCommunity) {
@@ -71,6 +79,17 @@ public class CommunityController {
         // Call the service to set the ruleId, remaining term period, and next
         // contribution date
         communityService.setRuleId(communityId, ruleId, remainingTermPeriod, nextContributionDate);
+
+        // Return a successful response
+        return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("updateCronJob/{communityId}")
+    public ResponseEntity<Void> updateNextContributionDate(@PathVariable int communityId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime nextContributionDate) {
+        // Call the service to set the ruleId, remaining term period, and next
+        // contribution date
+        communityService.updateNextContributionDate(communityId, nextContributionDate);
 
         // Return a successful response
         return ResponseEntity.ok().body(null);
